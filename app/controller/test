@@ -1,0 +1,10 @@
+#!/bin/bash
+
+home() {
+    echo 'hello world'
+}
+
+user() {
+    echo id: $id
+    echo page: $page
+}

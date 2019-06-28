@@ -1,0 +1,67 @@
+#!/bin/bash
+
+[ -v _ROUTER_MODULE_ ] &&
+    return 0 || _ROUTER_MODULE_=
+
+ROUTE_DIR=$__DIR__/storage/petunia/routes
+
+. $__DIR__/lib/petunia/http/request
+. $__DIR__/lib/petunia/http/response
+
+URI.unescape() {
+    local str=$1
+    str=$(echo $str | sed 's/+/ /g' | sed 's/%/\\x/g')
+    printf $str
+}
+
+router::define() {
+    [ -v $_ROUTE_MATCHED ] || return 0
+
+    unset method
+    typeset -u method=$1
+    local path=$2
+    local action=$3
+
+    _URI_PARAMS=$(echo $path | awk -F '/:' '{
+        for(i = 1; i <= NF; i++) {
+            print $i
+        }
+    }' | sed 's/\/.*//g' | sed '/^$/d')
+    _URI_PARAMS=($_URI_PARAMS)
+
+    path=$(echo $path | sed 's/:\w\+/(.*)/g')
+
+    echo $method | grep "$REQUEST_METHOD" >/dev/null &&
+        [[ "$REQUEST_URI" =~ $path ]] || return 1
+
+    local -i i
+    for ((i = 1; i < ${#BASH_REMATCH[@]}; i++)); do
+        eval ${_URI_PARAMS[i - 1]}=$(URI.unescape "${BASH_REMATCH[i]}")
+    done
+
+    _ROUTE_MATCHED=true
+    _ROUTE_ACTION=${action//./\/}
+    return 0
+}
+
+router::handle() {
+    # echo "x-requested-with: $HTTP_X_REQUESTED_WITH"
+    # echo "Auth: $HTTP_AUTHORIZATION"
+
+    # handle uri
+    . $__DIR__/route/config
+
+    # handle controller
+    mkdir -p /tmp/$APP_NAME
+    tmp_file=$(md5sum <<<$(date +%s))
+    tmp_file=${tmp_file% -}
+
+    local controller=${_ROUTE_ACTION%/*}
+    . $__DIR__/app/controller/$controller
+    ${_ROUTE_ACTION##*/} >$tmp_file
+
+    response::headers
+    cat $tmp_file
+    rm $tmp_file
+    return 0
+}

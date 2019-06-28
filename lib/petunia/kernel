@@ -1,0 +1,54 @@
+#!/bin/bash
+
+[ -v _KERNEL_MODULE_ ] &&
+    return 0 || _KERNEL_MODULE_=
+
+kernel::abort() {
+    printf "$1\n" >&2
+    [ $# -lt 2 ] && exit 1 || exit $2
+}
+
+kernel::excute() {
+    local COMMAND=${1/:/ }
+    shift
+
+    kernel::commands.$COMMAND $*
+    return $?
+}
+
+kernel::commands.make() {
+    local SUB=$1
+    shift
+
+    [ $# -eq 0 ] && kernel::abort "missing file name!"
+    [ -f "$1" ] || [ -d "$1" ] &&
+        kernel::abort "file or directory exists!"
+
+    [ "$1" == "${1%/*}" ] || mkdir -p ${1%/*}
+
+    case $SUB in
+    script)
+        typeset -u SCIPT_NAME=${1##*/}
+        cat <<SCRIPT >>$1
+#!/bin/bash
+
+[ -v _${SCIPT_NAME}_MODULE_ ] &&
+    return 0 || _${SCIPT_NAME}_MODULE_=
+SCRIPT
+        ;;
+    *) ;;
+    esac
+
+    return 0
+}
+
+kernel::commands.route() {
+    local SUB=$1
+    shift
+
+    case $SUB in
+    generate) . $__DIR__/route/config ;;
+    clear) rm -r $__DIR__/storage/petunia/routes/* ;;
+    esac
+    return 0
+}

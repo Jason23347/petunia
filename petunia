@@ -1,0 +1,29 @@
+#!/bin/bash -e
+#
+# petunia, a little shell cgi framework,
+# just for fun.
+#
+# @author jason<jason23347@gmail.com>
+# @version 0.8-beta
+
+SCRIPT_NAME=${0##*/}
+
+readonly __DIR__=${PWD%%/public}
+
+# TODO: test .env
+. .env
+
+. $__DIR__/config/app.conf
+. $__DIR__/lib/petunia/kernel
+
+usage() {
+    cat <<USAGE
+Usage: $SCRIPT_NAME [something]
+
+USAGE
+    exit 1
+}
+
+[ $# -eq 0 ] && usage
+
+kernel::excute $*

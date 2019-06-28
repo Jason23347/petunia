@@ -1,0 +1,5 @@
+#!/bin/bash
+
+user() {
+    echo "this is an api page."
+}

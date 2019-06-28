@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# Author: jason <jason23347@gmail.com>
+#
+# refactored from script 'bashlib' by
+# darren chamberlain <dlc@users.sourceforge.net> and
+# Paul Bournival <paulb-ns@cajun.nu>
+
+[ -v _REQUEST_MODULE_ ] &&
+    return 0 || _REQUEST_MODULE_=
+
+[ "$SCRIPT_NAME" = "petunia" ] && return 0
+
+declare -A INPUT
+declare -A COOKIE
+
+# TODO: this only works for x-form-data
+STDIN=$(cat)
+if [ -n "${STDIN}" ]; then
+    QUERY_STRING="${QUERY_STRING}&${STDIN}"
+fi
+
+# Handle GET and POST requests... (the QUERY_STRING will be set)
+if [ -n "${QUERY_STRING}" ]; then
+    # name=value params, separated by either '&' or ';'
+    if echo ${QUERY_STRING} | grep '=' >/dev/null; then
+        for Q in $(echo ${QUERY_STRING} | tr ";&" "\012"); do
+            unset name
+            unset value
+            unset tmpvalue
+
+            name=${Q%%=*}
+            name=$(echo $name | sed -e 's/%\(\)/\\\x/g' | tr "+" " ")
+            name=$(echo $name | tr -d ".-")
+            name=$(printf $name)
+
+            tmpvalue=${Q#*=}
+            tmpvalue=$(echo $tmpvalue | sed -e 's/%\(..\)/\\\x\1 /g')
+
+            for i in $tmpvalue; do
+                g=$(printf ${i})
+                value="${value}${g}"
+            done
+
+            eval "INPUT[$name]='${value}'"
+        done
+        export INPUT
+    else # keywords: foo.cgi?a+b+c
+        Q=$(echo ${QUERY_STRING} | tr '+' ' ')
+        eval "export KEYWORDS='${Q}'"
+    fi
+fi
+
+if [ -n "$HTTP_COOKIE" ]; then
+    declare -A COOKIE
+
+    for Q in $HTTP_COOKIE; do
+        unset name
+        unset value
+        unset tmpvalue
+
+        Q=${Q%;}
+
+        name=${Q%%=*}
+        name=$(echo $name | sed -e 's/%\(\)/\\\x/g' | tr "+" " ")
+        name=$(echo $name | tr -d ".-")
+        name=$(printf $name)
+
+        tmpvalue=${Q#*=}
+        tmpvalue=$(echo $tmpvalue | sed -e 's/%\(..\)/\\\x\1 /g')
+
+        for i in $tmpvalue; do
+            g=$(printf ${i})
+            value="${value}${g}"
+        done
+
+        eval "COOKIE[$name]='${value}'"
+    done
+    export COOKIE
+fi

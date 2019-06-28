@@ -1,0 +1,11 @@
+#!/bin/bash
+# URI and actions
+
+HOME='/home'
+
+router::define 'GET' $HOME test.home
+
+# test
+router::define 'GET' '/user/:id/test/:page' test.user
+
+router::define 'GET POST' '/api/user' api.restful.user
