@@ -1,11 +1,16 @@
 #!/bin/bash
 # URI and actions
 
+[ -v _MODULE_ROUTE_CONFIG_ ] &&
+    return 0 || _MODULE_ROUTE_CONFIG_=
+
 HOME='/home'
 
-router::define 'GET' $HOME test.home
+router::define 'GET' $HOME test.hom
+router::define 'POST' '/fuck-me' test.test
 
-# test
+# tests
+
 router::define 'GET' '/user/:id/test/:page' test.user
 
 router::define 'GET POST' '/api/user' api.restful.user

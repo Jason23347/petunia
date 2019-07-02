@@ -1,8 +1,16 @@
 #!/bin/bash
 
+. $__DIR__/dao/user
+
 home() {
-    echo 'hello world'
-}
+    echo "home"
+} 2>&1
+
+test() {
+    DB::setTable users
+    DB::filter "id='${INPUT[aaa]}'"
+    DB::query
+} 2>&1
 
 user() {
     echo id: $id
