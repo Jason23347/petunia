@@ -1,0 +1,9 @@
+#!/bin/bash
+
+[ -v _MODULE_DAO_MESSAGE_ ] &&
+    return 0 || _MODULE_DAO_MESSAGE_=
+
+typeset -l DAO_NAME=MESSAGE
+
+. $__DIR__/lib/petunia/database/database
+. $__DIR__/lib/petunia/database/templates/$DB_CONNECTION/dao

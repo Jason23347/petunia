@@ -1,0 +1,12 @@
+#!/bin/bash
+
+[ -v _MODULE_DAO_USER_ ] &&
+    return 0 || _MODULE_DAO_USER_=
+
+typeset -l DAO_NAME=USER
+eval "declare -A ${DAO_NAME}_COLUMNS=(
+    aaa
+)"
+
+. /var/cgi/petunia/lib/petunia/database/database
+. /var/cgi/petunia/lib/petunia/database/templates/mysql/dao
