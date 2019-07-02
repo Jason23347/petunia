@@ -36,7 +36,8 @@ router::define() {
 
     local -i i
     for ((i = 1; i < ${#BASH_REMATCH[@]}; i++)); do
-        eval ${_URI_PARAMS[i - 1]}=$(URI.unescape "${BASH_REMATCH[i]}")
+        eval ${_URI_PARAMS[i - 1]}=$(URI.unescape "${BASH_REMATCH[i]}" |
+            tr ';`&$' "\00")
     done
 
     _ROUTE_MATCHED=true
