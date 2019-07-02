@@ -6,8 +6,8 @@
 # darren chamberlain <dlc@users.sourceforge.net> and
 # Paul Bournival <paulb-ns@cajun.nu>
 
-[ -v _REQUEST_MODULE_ ] &&
-    return 0 || _REQUEST_MODULE_=
+[ -v _MODULE_REQUEST_ ] &&
+    return 0 || _MODULE_REQUEST_=
 
 [ "$SCRIPT_NAME" = "petunia" ] && return 0
 

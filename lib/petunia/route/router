@@ -1,7 +1,7 @@
 #!/bin/bash
 
-[ -v _ROUTER_MODULE_ ] &&
-    return 0 || _ROUTER_MODULE_=
+[ -v _MODULE_ROUTER_ ] &&
+    return 0 || _MODULE_ROUTER_=
 
 ROUTE_DIR=$__DIR__/storage/petunia/routes
 
@@ -48,19 +48,26 @@ router::handle() {
     # echo "x-requested-with: $HTTP_X_REQUESTED_WITH"
     # echo "Auth: $HTTP_AUTHORIZATION"
 
+    # redirect stdout
+    exec 5>&1
+
+    # redirect stdout to tmp file
+    mkdir -p /tmp/$APP_NAME
+    tmp_file=$(md5sum <<<$(date +%s))
+    tmp_file=/tmp/$APP_NAME/${tmp_file% -}
+    exec 1>>$tmp_file
+
     # handle uri
     . $__DIR__/route/config
 
     # handle controller
-    mkdir -p /tmp/$APP_NAME
-    tmp_file=$(md5sum <<<$(date +%s))
-    tmp_file=${tmp_file% -}
 
     local controller=${_ROUTE_ACTION%/*}
     . $__DIR__/app/controller/$controller
-    ${_ROUTE_ACTION##*/} >$tmp_file
+    ${_ROUTE_ACTION##*/}
 
-    response::headers
+    exec 1>&5
+    Response::headers
     cat $tmp_file
     rm $tmp_file
     return 0

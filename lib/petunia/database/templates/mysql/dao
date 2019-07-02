@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# this file is allowed to be sourced
+# more than once
+
+. $__DIR__/lib/petunia/database/database
+
+eval "
+$DAO_NAME.find() {
+    [ \$# -eq 0 ] && return 1
+    key=\${1/ /}
+
+    DB::unset
+    DB::setTable ${DAO_NAME}s
+    DB::filter \"${DAO_PRIMARY_KEY:-id}=\$key\"
+
+    export -A DB_RESULT=\(\$(DB::query | awk -F '\t' '{
+        for (i = 1; i <= NF; i++) {
+            if(FNR == 1)
+                a[i]=\$i
+            else
+                b[i]=\$i
+        }
+    } END {
+        for (i = 1; i < NF; i++) {
+            printf(\"[%s]='\''%s'\''\n\", a[i], b[i])
+        }
+    }')\)
+    return 0
+}
+
+$DAO_NAME.count() {
+    DB::setTable ${DAO_NAME}s
+    DB::count
+    local status=\$?
+    DB::unset
+    return \$status
+}
+
+$DAO_NAME.filter() {
+    DB::filter \$1
+    return \$?
+}
+"
+
+unset DAO_NAME

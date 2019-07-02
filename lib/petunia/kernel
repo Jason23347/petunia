@@ -1,7 +1,7 @@
 #!/bin/bash
 
-[ -v _KERNEL_MODULE_ ] &&
-    return 0 || _KERNEL_MODULE_=
+[ -v _MODULE_KERNEL_ ] &&
+    return 0 || _MODULE_KERNEL_=
 
 kernel::abort() {
     printf "$1\n" >&2
@@ -25,18 +25,62 @@ kernel::commands.make() {
         kernel::abort "file or directory exists!"
 
     [ "$1" == "${1%/*}" ] || mkdir -p ${1%/*}
+    typeset -u FILE_NAME=${1##*/}
 
     case $SUB in
     script)
-        typeset -u SCIPT_NAME=${1##*/}
-        cat <<SCRIPT >>$1
+        cat <<SCRIPT >$1
 #!/bin/bash
 
-[ -v _${SCIPT_NAME}_MODULE_ ] &&
-    return 0 || _${SCIPT_NAME}_MODULE_=
+[ -v _MODULE_${FILE_NAME}_ ] &&
+    return 0 || _MODULE_${FILE_NAME}_=
 SCRIPT
         ;;
-    *) ;;
+    dao)
+        cat <<DAO >$__DIR__/dao/$1
+#!/bin/bash
+
+[ -v _MODULE_DAO_${FILE_NAME}_ ] &&
+    return 0 || _MODULE_DAO_${FILE_NAME}_=
+
+typeset -l DAO_NAME=${FILE_NAME}
+
+. $__DIR__/lib/petunia/database/database
+. $__DIR__/lib/petunia/database/templates/$DB_CONNECTION/dao
+DAO
+        ;;
+    test)
+        cat <<TEST >$__DIR__/test/$1
+#!/bin/bash
+
+testEquality() {
+  assertEquals 1 1
+}
+
+. lib/shunit2/shunit2
+TEST
+        ;;
+    migration)
+        typeset -l table="create_${FILE_NAME##*/}_table"
+        cat <<MIGRATION >$__DIR__/app/migration/$table
+#!/bin/bash
+
+. \$__DIR__/lib/petunia/database/database
+
+migration.up() {
+    DB::setTable ${table}
+    DB::setPrimaryKey 'id'
+
+    DB::createTable
+}
+
+migration.down() {
+    DB::setTable ${table}
+    DB::dropTable
+}
+MIGRATION
+        ;;
+    *) kernel::abort "command $SUB not found" ;;
     esac
 
     return 0
@@ -49,6 +93,42 @@ kernel::commands.route() {
     case $SUB in
     generate) . $__DIR__/route/config ;;
     clear) rm -r $__DIR__/storage/petunia/routes/* ;;
+    *) kernel::abort "command $SUB not found" ;;
     esac
     return 0
+}
+
+kernel::commands.migrate() {
+    [ $# -eq 0 ] && for item in $(ls $__DIR__/app/migration); do
+        . $__DIR__/app/migration/$item
+
+        # migration.down
+        migration.up
+
+        unset -f migration.down
+        unset -f migration.up
+    done
+
+    local SUB=$1
+    shift
+
+    case $SUB in
+    refresh)
+        for item in $(ls $__DIR__/app/migration); do
+            . $__DIR__/app/migration/$item
+
+            migration.down
+            migration.up
+
+            unset -f migration.down
+            unset -f migration.up
+        done
+        ;;
+    esac
+}
+
+kernel::commands.test() {
+    [ $# -eq 0 ] && kernel::abort "missing test file name"
+    $__DIR__/test/$1
+    return $?
 }

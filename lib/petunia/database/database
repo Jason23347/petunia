@@ -1,0 +1,6 @@
+#!/bin/bash
+
+[ -v _MODULE_DATABASE_ ] &&
+    return 0 || _MODULE_DATABASE_=
+
+. $__DIR__/lib/petunia/database/$DB_CONNECTION || return 1

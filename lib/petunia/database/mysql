@@ -1,0 +1,107 @@
+#!/bin/bash
+
+[ -v _MODULE_DB_MYSQL_ ] &&
+    return 0 || _MODULE_DB_MYSQL_=
+
+_DB_CONDITIONS="WHERE "
+
+# basic function
+# FIXME: echos '?' instead of chinese
+# FIXME: mysql: [Warning] Using a password on the command line interface can be insecure.
+DB::excute() {
+    eval "mysql -h$DB_HOST -P$DB_PORT \
+        -u$DB_USERNAME -p$DB_PASSWORD -D$DB_DATABASE -e \"$1\"" # 2>/dev/null
+    return $?
+}
+
+# generate a select sentence
+DB::select() {
+    DB::excute "SELECT ${1} FROM ${2} ${3}"
+    return $?
+}
+
+DB::inset() {
+    local sql="INSERT INTO $_DB_TABLE "
+    local keys='('
+    local values='('
+    for item in ${!_DB_COLUMNS[@]}; do
+        keys+="$item,"
+        values+="$_DB_COLUMNS[$item],"
+    done
+    keys="${keys%,})"
+    values="${values%,})"
+
+    echo DB::excute $sql
+}
+
+DB::count() {
+    DB::select 'COUNT(*)' "${_DB_TABLE}" "${_DB_CONDITIONS%and}"
+    return $?
+}
+
+# unset paramters after a query
+DB::unset() {
+    unset _DB_TABLE
+    unset _DB_PRIMARY_KEY
+    _DB_CONDITIONS="WHERE "
+}
+
+# set table name
+DB::setTable() {
+    local table="${1// /}"
+    _DB_TABLE="$table"
+}
+
+# add a where condition
+DB::filter() {
+    _DB_CONDITIONS+="$1 and"
+}
+
+# boots a query
+DB::query() {
+    DB::select '*' "${_DB_TABLE}" "${_DB_CONDITIONS%and}"
+    local status=$?
+    DB::unset
+    return $status
+}
+
+declare -A _DB_COLUMNS
+
+# migration functions
+DB::setColumn() {
+    local name="${1/ /}"
+    local type="$2"
+
+    eval _DB_COLUMNS[\"$name\"]=\"$type NOT NULL\"
+}
+
+DB::setPrimaryKey() {
+    local key="${1/ /}"
+    _DB_PRIMARY_KEY="$key"
+    eval _DB_COLUMNS[\"$key\"]=\"INT UNSIGNED AUTO_INCREMENT PRIMARY KEY\"
+}
+
+DB::createTable() {
+    local sql="CREATE TABLE IF NOT EXISTS $_DB_TABLE ("
+
+    for item in ${!_DB_COLUMNS[@]}; do
+        sql+="\`$item\` ${_DB_COLUMNS[$item]},"
+    done
+
+    sql=${sql%,}
+    sql+=") ENGINE=$DEFAULT_ENGINE DEFAULT CHARSET=$DEFAULT_CHARSET"
+
+    DB::excute "$sql"
+    local status=$?
+
+    _DB_COLUMNS=()
+    _DB_PRIMARY_KEY=
+    return $status
+}
+
+DB::dropTable() {
+    [ -v _DB_TABLE ] || return 1
+
+    DB::excute "DROP TABLE IF EXISTS ${_DB_TABLE}"
+    return $?
+}
