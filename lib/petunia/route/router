@@ -37,7 +37,7 @@ router::define() {
     local -i i
     for ((i = 1; i < ${#BASH_REMATCH[@]}; i++)); do
         eval ${_URI_PARAMS[i - 1]}=$(URI.unescape "${BASH_REMATCH[i]}" |
-            tr ';`&$' "\00")
+            tr -d '`$')
     done
 
     _ROUTE_MATCHED=true
@@ -53,9 +53,10 @@ router::handle() {
     exec 5>&1
 
     # redirect stdout to tmp file
-    mkdir -p /tmp/$APP_NAME
+    mkdir -p /tmp/petunia/$APP_NAME
+    cd /tmp/petunia/$APP_NAME
     tmp_file=$(md5sum <<<$(date +%s))
-    tmp_file=/tmp/$APP_NAME/${tmp_file% -}
+    tmp_file=/tmp/petunia/$APP_NAME/${tmp_file% -}
     exec 1>>$tmp_file
 
     # handle uri
