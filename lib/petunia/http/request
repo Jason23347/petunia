@@ -15,7 +15,8 @@ declare -A INPUT
 declare -A COOKIE
 
 # TODO: this only works for x-form-data
-STDIN=$(cat | tr '%60' '\012' | tr '%24' '\012')
+# delete '`' and '$'
+STDIN=$(cat | tr -d '%60' | tr -d '%24')
 if [ -n "${STDIN}" ]; then
     QUERY_STRING="${QUERY_STRING}&${STDIN}"
 fi
@@ -24,7 +25,7 @@ fi
 if [ -n "${QUERY_STRING}" ]; then
     # name=value params, separated by either '&' or ';'
     if echo ${QUERY_STRING} | grep '=' >/dev/null; then
-        for Q in $(echo ${QUERY_STRING} | tr ';`&$' "\012"); do
+        for Q in $(echo ${QUERY_STRING} | tr -d '`$' | tr ';&' "\012"); do
             unset name
             unset value
             unset tmpvalue

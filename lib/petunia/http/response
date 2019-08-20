@@ -7,10 +7,11 @@ declare -A _RESPONSE_STATUS
 _RESPONSE_STATUS=200
 
 declare -A _RESPONSE_HEADERS
-
 _RESPONSE_HEADERS['Content-type']='text/html'
 
 declare -A _RESPONSE_COOKIES
+
+declare -A _RESPONSE_VARIABLES
 
 Response::setStatus() {
     [ $# -eq 0 ] && return 1
@@ -41,4 +42,21 @@ Response::headers() {
 
     printf "\n"
     return 0
+}
+
+view.set() {
+    [ $# -ne 2 ] && return 1
+    _RESPONSE_VARIABLES["$1"]="$2"
+    return 0
+}
+
+view.render() {
+    local str=
+    local value=
+    for key in ${!_RESPONSE_VARIABLES[@]}; do
+        value=${_RESPONSE_VARIABLES[$key]}
+        str+="| sed \"s/{{ $key }}/$value/g\""
+    done
+
+    eval cat $__DIR__/app/views/$1.html $str
 }
