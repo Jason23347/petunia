@@ -55,7 +55,7 @@ view.render() {
     local value=
     for key in ${!_RESPONSE_VARIABLES[@]}; do
         value=${_RESPONSE_VARIABLES[$key]}
-        str+="| sed \"s/{{ $key }}/$value/g\""
+        str+="| sed \"s/{{ ${key//\//\\\/} }}/${value//\//\\\/}/g\""
     done
 
     eval cat $__DIR__/app/views/$1.html $str
