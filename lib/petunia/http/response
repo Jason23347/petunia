@@ -59,4 +59,5 @@ view.render() {
     done
 
     eval cat $__DIR__/app/views/$1.html $str
+    _RESPONSE_VARIABLES=
 }
