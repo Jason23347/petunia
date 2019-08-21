@@ -1,0 +1,8 @@
+#!/bin/bash
+
+[ -v _MODULE_KERNEL_EXT_ ] &&
+    return 0 || _MODULE_KERNEL_EXT_=
+
+kernel::commands.hello() {
+    echo "Hello World"
+}

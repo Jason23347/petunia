@@ -3,6 +3,8 @@
 [ -v _MODULE_KERNEL_ ] &&
     return 0 || _MODULE_KERNEL_=
 
+[ -f $__DIR__/extends/commands ] && . $__DIR__/extends/commands
+
 kernel::abort() {
     printf "$1\n" >&2
     [ $# -lt 2 ] && exit 1 || exit $2
