@@ -32,7 +32,7 @@ router::define() {
     path=$(echo $path | sed 's/:\w\+/(.*)/g')
 
     echo $method | grep "$REQUEST_METHOD" >/dev/null &&
-        [[ "$REQUEST_URI" =~ "^$path$" ]] || return 1
+        [[ "$REQUEST_URI" =~ $path$ ]] || return 1
 
     local -i i
     for ((i = 1; i < ${#BASH_REMATCH[@]}; i++)); do
