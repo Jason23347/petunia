@@ -32,7 +32,7 @@ router::define() {
     path=$(echo $path | sed 's/:\w\+/(.*)/g')
 
     echo $method | grep "$REQUEST_METHOD" >/dev/null &&
-        [[ "$REQUEST_URI" =~ $path ]] || return 1
+        [[ "$REQUEST_URI" =~ "^$path$" ]] || return 1
 
     local -i i
     for ((i = 1; i < ${#BASH_REMATCH[@]}; i++)); do
@@ -46,9 +46,6 @@ router::define() {
 }
 
 router::handle() {
-    # echo "x-requested-with: $HTTP_X_REQUESTED_WITH"
-    # echo "Auth: $HTTP_AUTHORIZATION"
-
     # redirect stdout
     exec 5>&1
 
@@ -62,15 +59,28 @@ router::handle() {
     # handle uri
     . $__DIR__/route/config
 
+    if [ -v $_ROUTE_MATCHED ]; then
+        Response::setStatus 404
+        # TODO: cat err/404.html
+        echo "Page not found."
+
+        route::clean
+        return 0
+    fi
+
     # handle controller
 
     local controller=${_ROUTE_ACTION%/*}
     . $__DIR__/app/controller/$controller
     ${_ROUTE_ACTION##*/}
 
+    route::clean
+    return 0
+}
+
+route::clean() {
     exec 1>&5
     Response::headers
     cat $tmp_file
     rm $tmp_file
-    return 0
 }
